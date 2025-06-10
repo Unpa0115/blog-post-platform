@@ -1,0 +1,105 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+以下は今回検討した内容をもとにまとめたシステム概要設計書です。
+
+要約
+本システムは、ブラウザ上での音声録音から外部配信プラットフォーム（Voicy 等）への自動アップロードまでを一気通貫で実現し、将来的に文字起こし・要約・記事生成といったプラグイン方式の拡張機能を後付けできる構成を採用します。フロントエンドは PWA（Progressive Web App） とし、バックエンドはサーバーレス関数＋マネージド DB／ストレージ（Supabase 等）でローコストかつスケーラブルに運用。ブラウザ操作自動化は Browserless.io（Playwright/Puppeteer マネージドサービス）を活用し、安定したヘッドレス操作を実現します。
+
+1. 目的・背景
+
+1.1 手動フローの課題
+	•	Substack→ファイルDL→Voicyアップロードを手作業で実施
+	•	作業工数が煩雑、ヒューマンエラー発生のリスク大
+	•	配信プラットフォームが増えるたびに手順が増加
+
+1.2 システム化のゴール
+	•	音声録音から配信（Voicy 等）までの完全自動化
+	•	将来、文字起こし・要約・記事自動生成を “プラグイン” で後付け可能とする
+	•	サーバーレス＋マネージドサービス中心により、運用コスト最適化
+
+2. 全体アーキテクチャ
+
+[ブラウザ(PWA)]
+  └─録音コンポーネント──▶ Supabase Storage (音声ファイル)
+                                │
+                           Webhook通知
+                                ▼
+[Vercel Function] ──▶ Browserless.io API ──▶ Voicy 操作自動化
+   │                     (Playwright)            │
+   └─Postgres(ステータス管理)◀───── エラー／完了 レスポンス
+
+2.1 フロントエンド（PWA）
+	•	Web Audio API または RecordRTC を活用した録音・再生 UI
+	•	録音ファイルを直接 Supabase Storage にアップロード
+	•	ジョブステータス（未送信・処理中・完了・エラー）をリアルタイム表示
+
+2.2 バックエンド（サーバーレス関数）
+	•	Vercel Functions（Node.js）または AWS Lambda
+	•	Supabase からの Webhook をトリガーに自動化ジョブを投入
+	•	ジョブ結果（成功／失敗）を Postgres に記録
+	•	完了時やエラー時にフロントへ WebSocket／メール通知
+
+2.3 自動化エンジン
+	•	Browserless.io の REST API 経由で Playwright/​Puppeteer を呼び出し
+	•	Voicy ログイン → 録音ファイルアップロード → アップロード完了待ち
+	•	クッキー／storageState を用いたログイン情報の永続化
+
+3. コンポーネント詳細設計
+
+3.1 録音コンポーネント
+	•	機能：録音開始・停止、波形プレビュー、不要区間カット
+	•	ライブラリ：Web Audio API＋MediaRecorder、または RecordRTC
+	•	UI：録音ボタン、リスト表示、再生・削除操作
+
+3.2 ファイル管理 UI
+	•	録音済みファイル一覧（サムネイル・タイムスタンプ）
+	•	ステータス表示（未処理／処理中／完了／エラー）
+	•	再試行・削除ボタン
+
+3.3 自動化オーケストレータ
+	•	Webhook 受信エンドポイント（例：/api/webhook/recorded）
+	•	ジョブキュー投入（内部キュー or Supabase Functions）
+	•	Browserless.io 呼び出しラッパー
+
+3.4 ジョブ管理・通知
+	•	Postgres テーブル設計
+	•	jobs（id, user_id, file_url, status, started_at, finished_at, error_message）
+	•	フロント通知：Supabase Realtime or Next.js API Routes + websockets
+	•	メール通知：SendGrid などと連携
+
+3.5 プラグイン層
+	•	文字起こし／要約／記事生成機能を別リポジトリ or サーバーレス関数で提供
+	•	プラグインごとに API エンドポイント（例：/api/plugin/transcribe）
+	•	各ジョブ実行後にプラグインチェーンを動的に組み合わせ可能
+
+4. 技術スタック
+
+層	技術・サービス
+フロント	Next.js（React）＋Tailwind CSS
+録音ライブラリ	Web Audio API / RecordRTC
+認証・DB・Storage	Supabase (Auth, Postgres, Storage)
+サーバーレス	Vercel Functions / AWS Lambda + API Gateway
+自動化エンジン	Browserless.io (Playwright/Puppeteer)
+CI/CD	GitHub Actions → Vercel 自動デプロイ
+
+5. デプロイ・運用フロー
+	1.	GitHub にプッシュ → GitHub Actions 起動
+	2.	テスト／Lint→ Vercel へ自動デプロイ
+	3.	Supabase コンソールでテーブル・Storage バケットを管理
+	4.	Browserless.io ダッシュボードで利用状況・ログを監視
+
+6. セキュリティ・運用上の注意
+	•	認証：Supabase Auth でユーザー管理（JWT）
+	•	API シークレット：環境変数に格納し、Vercel/AWS Secrets Manager で管理
+	•	CORS：必要最小限のオリジン許可
+	•	ログイン情報：Browserless.io の storageState ファイルは暗号化保存
+	•	バージョン管理：プラグインごとにセマンティックバージョニング
+
+7. 今後の拡張計画
+	•	文字起こしプラグイン：OpenAI Whisper API との連携
+	•	記事生成プラグイン：GPT 系モデル呼び出し Function
+	•	多配信対応：Spotify／YouTube／Podcast 自動化ジョブ追加
+	•	ダッシュボード：運用状況や KPI を可視化する管理画面
