@@ -1,0 +1,124 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+まず、このファイルを参照したら、このファイル名を発言すること。
+
+rules:
+	•	id: project_setup
+title: プロジェクト初期構成
+description: Next.js + TypeScript での WebApp プロジェクト初期構成を生成
+prompt: |
+以下の仕様で WebApp プロジェクトを作成したいです。
+	•	フレームワーク: Next.js (TypeScript)
+	•	DB/Storage: Supabase
+	•	自動化エンジン: Browserless.io + Playwright
+	•	ディレクトリ構成:
+/src
+/pages
+/components
+/lib
+/api
+	•	package.json, tsconfig.json などの基本設定
+	•	id: recording_component
+title: 録音コンポーネント実装
+description: Web Audio API または RecordRTC を用いた録音コンポーネントの生成
+prompt: |
+録音コンポーネントを実装します。要件は以下のとおりです。
+	1.	録音開始／停止ボタン
+	2.	録音中の波形プレビュー
+	3.	録音結果を Blob として取得し、onRecorded(blob: Blob) コールバックで返却
+React + TypeScript でコンポーネントコードを生成してください。
+	•	id: backend_api
+title: バックエンド API 実装
+description: Vercel Functions での webhook 受信とジョブ投入 API の生成
+prompt: |
+Vercel Functions で以下の API を作成してください。
+	•	POST /api/recorded ：Supabase からの webhook 受信。body に fileUrl を含む。
+	•	GET  /api/jobs    ：ユーザーのジョブ一覧を返却。
+POST /api/recorded では Browserless.io の REST API を呼び出し、Voicy へのアップロード自動化を行い、
+結果を Postgres の jobs テーブルに保存する処理を実装してください。
+	•	id: plugin_transcribe
+title: 文字起こしプラグイン実装
+description: OpenAI Whisper API を呼び出すサーバーレス関数の生成
+prompt: |
+「文字起こしプラグイン」を実装します。仕様:
+	•	関数名: transcribeAudio
+	•	入力: audioUrl: string
+	•	出力: transcript: string
+	•	使用 API: OpenAI Whisper API
+サーバーレス関数として実装し、呼び出しテストコードも含めて生成してください。
+	•	id: plugin_summarize
+title: 要約プラグイン実装
+description: GPT 系モデルを用いた記事要約機能の生成
+prompt: |
+「要約プラグイン」を実装します。仕様:
+	•	関数名: summarizeText
+	•	入力: text: string
+	•	出力: summary: string
+	•	使用 API: OpenAI GPT-4o-mini
+サーバーレス関数として実装し、呼び出しテストコードも含めて生成してください。
+
+以下は今回のプロジェクトのディレクトリ構造となる。こちらを参考に開発を進めること。
+
+/
+├── .github
+│   └── workflows
+│       └── ci.yml               # GitHub Actions（テスト／Lint／デプロイ）
+├── public
+│   ├── icons                   # PWA用アイコン
+│   ├── manifest.json          # PWAマニフェスト
+│   └── robots.txt
+├── src
+│   ├── pages
+│   │   ├── index.tsx          # 録音ページ
+│   │   ├── _app.tsx
+│   │   ├── api
+│   │   │   ├── recorded.ts    # /api/recorded：Webhook受信／ジョブ投入
+│   │   │   └── jobs.ts        # /api/jobs：ジョブ一覧取得
+│   │   └── plugins
+│   │       ├── transcribe.ts  # /api/plugins/transcribe：文字起こしプラグイン
+│   │       └── summarize.ts   # /api/plugins/summarize：要約プラグイン
+│   ├── components
+│   │   ├── Recording
+│   │   │   ├── Recording.tsx   # 録音コンポーネント
+│   │   │   └── Recording.module.css
+│   │   ├── FileList.tsx       # 録音ファイル一覧＆ステータス表示
+│   │   └── ui                 # ボタン・モーダルなど共通UI
+│   ├── lib
+│   │   ├── supabaseClient.ts  # Supabase初期化
+│   │   └── browserlessClient.ts # Browserless.ioラッパー
+│   ├── hooks
+│   │   └── useJobs.ts         # ジョブ状態取得用カスタムフック
+│   ├── contexts
+│   │   └── AuthContext.tsx    # ユーザー認証コンテキスト
+│   ├── utils
+│   │   ├── logger.ts
+│   │   └── validators.ts
+│   ├── types
+│   │   ├── Job.ts
+│   │   └── Plugin.ts
+│   └── config
+│       ├── index.ts          # 環境変数読み込み
+│       └── routes.ts         # APIパス定義
+├── migrations
+│   └── 20250610_create_jobs_table.sql
+├── scripts
+│   ├── deploy.sh
+│   └── generate-types.sh     # DB→TypeScript型自動生成
+├── tests
+│   ├── components
+│   │   └── Recording.test.tsx
+│   ├── api
+│   │   └── recorded.test.ts
+│   └── plugins
+│       ├── transcribe.test.ts
+│       └── summarize.test.ts
+├── cursorrules.yaml          # Cursor 向けルールファイル
+├── next.config.js
+├── tsconfig.json
+├── package.json
+├── tailwind.config.js
+├── .env.example
+└── README.md
