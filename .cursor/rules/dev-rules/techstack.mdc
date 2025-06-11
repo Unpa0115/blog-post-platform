@@ -11,9 +11,9 @@ alwaysApply: true
 
 ### コアテクノロジー
 
-- **Next.js** (v14.2.25) - React フレームワーク
-- **React** (v18.2.0) - UI ライブラリ
-- **TypeScript** (v5.2.2) - 型付き JavaScript
+- **Next.js** (latest) - React フレームワーク
+- **React** (v19.0.0) - UI ライブラリ
+- **TypeScript** (v5.x) - 型付き JavaScript
 
 ### UI コンポーネント
 
@@ -22,31 +22,40 @@ alwaysApply: true
   - tailwind-merge - クラス名の最適化
   - tailwindcss-animate - アニメーション機能
 - **Radix UI** - アクセシブルなヘッドレス UI コンポーネント
-  - Accordion, Alert Dialog, Avatar, Tabs など多数のコンポーネントを使用
-- **Lucide React** (v0.446.0) - アイコンライブラリ
+  - Checkbox, Dropdown Menu, Label, Slot など多数のコンポーネントを使用
+- **Lucide React** (v0.511.0) - アイコンライブラリ
+- **next-themes** (v0.4.6) - テーマ切り替え機能
 
 ### 認証
 
-- **Clerk** (v6.12.9) - 認証・ユーザー管理
+- **Supabase Auth** - 認証・ユーザー管理
+  - @supabase/ssr - Server-Side Rendering 対応
+  - @supabase/supabase-js - Supabase JavaScript クライアント
 
 ## バックエンド
 
 ### データベース
 
-- **Prisma** (v5.11.0) - TypeSafe ORM
-  - @prisma/client - データベースクライアント
-- Local SqLite(後に Supabase へ変更)
+- **Supabase** (PostgreSQL) - リアルタイムデータベース
+  - @supabase/supabase-js - TypeSafe データベースクライアント
+  - Row Level Security (RLS) による セキュリティ
+  - リアルタイム機能
 
 ## フォーム処理
 
 - Server Actions(with Next.js)
-- Zod: ^3.x (スキーマバリデーション)
+- Zod: ^3.x (スキーマバリデーション) - 必要に応じて導入
 
 ## ユーティリティ
 
+### UI/UX拡張
+
+- **class-variance-authority** (v0.7.1) - CSS クラスのバリアント管理
+- **clsx** (v2.1.1) - 条件付きクラス名結合
+
 ### 日付処理
 
-- **date-fns** (v3.6.0) - 日付操作ライブラリ
+- **date-fns** (v3.6.0) - 日付操作ライブラリ（必要に応じて導入）
 
 ### UI 拡張
 
@@ -54,17 +63,21 @@ alwaysApply: true
 
 ## 開発ツール
 
-- **ESLint** (v8.49.0) - コード品質管理
-- **Autoprefixer** (v10.4.15) - CSS ベンダープレフィックス自動付与
-- **PostCSS** (v8.4.30) - CSS トランスフォーメーション
+- **ESLint** (v9.x) - コード品質管理
+- **Autoprefixer** (v10.4.20) - CSS ベンダープレフィックス自動付与
+- **PostCSS** (v8.x) - CSS トランスフォーメーション
 
 ## デプロイメント
 
 - Vercel プラットフォーム推奨
+- Supabase との統合により自動デプロイ対応
 
 ## 特徴
 
 - Server Components 対応
+- Supabase Auth による認証機能
+- リアルタイムデータベース機能
+- Row Level Security による安全なデータアクセス
 - Incremental Static Regeneration (ISR)の実装
 - レスポンシブデザイン
 - アクセシビリティ対応
